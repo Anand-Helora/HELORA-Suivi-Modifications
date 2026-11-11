@@ -6,7 +6,8 @@
  *
  *   {
  *     operations, modifications, localisations, liensLocalisation,
- *     documents, traitements, liensTraitement, justificatifs, validations
+ *     documents, traitements, liensTraitement, justificatifs, validations,
+ *     evenements
  *   }
  *
  * Les statuts affichés sont toujours calculés, jamais saisis. Les compteurs
@@ -30,21 +31,52 @@ function trouver(contexte, cle, id, libelle) {
 // Validations : seule la décision la plus récente compte
 // ---------------------------------------------------------------------------
 
+/** Position du dernier événement du journal (ajout seul) satisfaisant `predicat`, ou -1. */
+function rangDernierEvenement(contexte, predicat) {
+  const evenements = liste(contexte, "evenements");
+  for (let i = evenements.length - 1; i >= 0; i -= 1) {
+    if (predicat(evenements[i])) return i;
+  }
+  return -1;
+}
+
 /**
- * Dernière validation correspondant au filtre, postérieure ou égale à `depuis`.
- * Les validations antérieures restent dans l'historique mais ne décident plus.
+ * Dernière validation correspondant au filtre, dans l'ordre d'enregistrement
+ * (les collections sont en ajout seul) et non selon l'horodatage : deux
+ * décisions horodatées à l'identique restent ainsi correctement ordonnées.
+ *
+ * `borne` délimite le cycle de revue courant : un prédicat sur les événements
+ * d'historique (par ex. la dernière soumission). Seules les validations dont
+ * l'événement de création est postérieur à cette borne sont retenues. À défaut
+ * d'événement de borne (état chargé depuis des fixtures sans historique), on
+ * retombe sur la date `depuis`. Les validations écartées restent dans
+ * l'historique mais ne décident plus.
  */
-export function derniereValidation(validations, { cibleType, cibleId, nature, roleAuMoment, depuis }) {
+export function derniereValidation(contexte, { cibleType, cibleId, nature, roleAuMoment, borne, depuis }) {
+  const rangCreation = new Map();
+  liste(contexte, "evenements").forEach((e, i) => {
+    if (e.action?.startsWith("VALIDATION_") && e.apres?.id) rangCreation.set(e.apres.id, i);
+  });
+  const rangBorne = borne ? rangDernierEvenement(contexte, borne) : -1;
   const seuil = depuis ? instant(depuis) : -Infinity;
   let retenue = null;
-  for (const v of validations) {
+  for (const v of liste(contexte, "validations")) {
     if (v.cibleType !== cibleType || v.cibleId !== cibleId || v.nature !== nature) continue;
     if (roleAuMoment && v.roleAuMoment !== roleAuMoment) continue;
-    if (instant(v.date) < seuil) continue;
-    if (!retenue || instant(v.date) >= instant(retenue.date)) retenue = v;
+    if (rangBorne >= 0 ? !((rangCreation.get(v.id) ?? -1) > rangBorne) : instant(v.date) < seuil) continue;
+    retenue = v;
   }
   return retenue;
 }
+
+/** Borne du cycle de revue d'un traitement : sa dernière soumission au contrôle. */
+const borneSoumission = (traitementId) => (e) =>
+  e.entiteType === "TRAITEMENT" && e.entiteId === traitementId && e.apres?.statut === "SOUMIS_A_CONTROLE"
+  && e.avant?.statut !== "SOUMIS_A_CONTROLE";
+
+/** Borne d'une décision d'impact : la dernière qualification de la modification. */
+const borneQualification = (modificationId) => (e) =>
+  e.entiteType === "MODIFICATION" && e.entiteId === modificationId && e.action === "QUALIFICATION_IMPACT";
 
 const estApprouvee = (validation) => validation?.decision === "APPROUVEE";
 
@@ -88,11 +120,12 @@ function origineDe(contexte, modification) {
 export function sansImpactValide(contexte, modification) {
   if (modification.impactDocumentaire !== "SANS_IMPACT") return false;
   if (!modification.justificationSansImpact?.trim()) return false;
-  const validation = derniereValidation(liste(contexte, "validations"), {
+  const validation = derniereValidation(contexte, {
     cibleType: "MODIFICATION",
     cibleId: modification.id,
     nature: "SANS_IMPACT",
     roleAuMoment: ROLE_RESPONSABLE_PAR_ORIGINE[origineDe(contexte, modification)],
+    borne: borneQualification(modification.id),
     depuis: modification.dateDecisionImpact,
   });
   return estApprouvee(validation);
@@ -196,7 +229,6 @@ export function justificatifsManquants(contexte, modification, { traitementId } 
 /** Gardes n° 3 à 5 : contrôle BIM et autorisations finales par origine. */
 export function problemesAutorisation(contexte, traitementId) {
   const traitement = trouver(contexte, "traitements", traitementId, "Traitement");
-  const validations = liste(contexte, "validations");
   const problemes = [];
   const modifications = modificationsDeTraitement(contexte, traitementId);
   if (modifications.length === 0) problemes.push("aucune modification n'est couverte par ce traitement");
@@ -205,16 +237,15 @@ export function problemesAutorisation(contexte, traitementId) {
     if (localisationsDeModification(contexte, m.id).length === 0) problemes.push(`${m.reference} : aucune localisation`);
   }
 
-  const bim = derniereValidation(validations, {
-    cibleType: "TRAITEMENT", cibleId: traitementId, nature: "BIM", depuis: traitement.dateSoumission,
-  });
+  const cycle = { borne: borneSoumission(traitementId), depuis: traitement.dateSoumission };
+  const bim = derniereValidation(contexte, { cibleType: "TRAITEMENT", cibleId: traitementId, nature: "BIM", ...cycle });
   if (!estApprouvee(bim)) problemes.push(bim ? "le contrôle BIM a été refusé" : "contrôle BIM non réalisé");
 
   const origines = [...new Set(modifications.map((m) => origineDe(contexte, m)))].sort();
   for (const origine of origines) {
     const role = ROLE_RESPONSABLE_PAR_ORIGINE[origine];
-    const finale = derniereValidation(validations, {
-      cibleType: "TRAITEMENT", cibleId: traitementId, nature: "FINALE", roleAuMoment: role, depuis: traitement.dateSoumission,
+    const finale = derniereValidation(contexte, {
+      cibleType: "TRAITEMENT", cibleId: traitementId, nature: "FINALE", roleAuMoment: role, ...cycle,
     });
     if (!estApprouvee(finale)) {
       problemes.push(
@@ -230,7 +261,6 @@ export function problemesAutorisation(contexte, traitementId) {
 /** Ensemble des gardes avant publication (n° 1 à 5 et indice cible). */
 export function problemesPublication(contexte, traitementId) {
   const traitement = trouver(contexte, "traitements", traitementId, "Traitement");
-  const validations = liste(contexte, "validations");
   const problemes = [];
   if (!traitement.indiceCible?.trim()) problemes.push("indice cible non renseigné");
   for (const m of modificationsDeTraitement(contexte, traitementId)) {
@@ -239,7 +269,7 @@ export function problemesPublication(contexte, traitementId) {
       problemes.push(`${m.reference} : mise à jour documentaire non qualifiée comme requise`);
     }
     if (m.exigences?.controleTechnique) {
-      const technique = derniereValidation(validations, {
+      const technique = derniereValidation(contexte, {
         cibleType: "MODIFICATION", cibleId: m.id, nature: "TECHNIQUE", roleAuMoment: "RESPONSABLE_TECHNIQUE",
       });
       if (!estApprouvee(technique)) problemes.push(`${m.reference} : contrôle technique requis non attesté`);

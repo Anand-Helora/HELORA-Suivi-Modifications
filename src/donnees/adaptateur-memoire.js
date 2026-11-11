@@ -78,6 +78,13 @@ const COLLECTION_PAR_CIBLE = Object.freeze({
 /** Champs d'une modification corrigeables via `corrigerModification` (les statuts ont leurs propres actions). */
 const CHAMPS_CORRIGEABLES = Object.freeze(["titre", "description", "disciplineCode", "dateExecution"]);
 
+/**
+ * Statuts où le périmètre et la préparation d'un traitement restent modifiables.
+ * Après un rejet, le traitement revient à EN_COURS et redevient modifiable.
+ */
+const STATUTS_TRAITEMENT_MODIFIABLES = Object.freeze(["A_PREPARER", "EN_COURS"]);
+const CHAMPS_PREPARATION = Object.freeze(["indiceDepart", "indiceCible", "assigneAId"]);
+
 /** Format provisoire des références lisibles (point ouvert § 9) : PREFIXE-AAAA-NNNN. */
 const PREFIXES_REFERENCE = Object.freeze({ operations: "OP", modifications: "MOD" });
 const MOTIF_REFERENCE = /^([A-Z]+)-(\d{4})-(\d{4,})$/;
@@ -312,8 +319,13 @@ export function creerAdaptateurMemoire({
   function lierTraitement(t, modificationId, traitementId, auteurId) {
     const modification = exister(t.e, "modifications", modificationId, "Modification");
     const traitement = exister(t.e, "traitements", traitementId, "Traitement");
-    if (traitement.statut === "PUBLIE") {
-      throw erreur(CODES_ERREUR.TRANSITION_INTERDITE, "Un traitement publié ne peut plus couvrir de nouvelle modification");
+    // Le périmètre d'un traitement est figé dès sa soumission : élargir un
+    // traitement déjà contrôlé ou autorisé contournerait les validations.
+    if (!STATUTS_TRAITEMENT_MODIFIABLES.includes(traitement.statut)) {
+      throw erreur(
+        CODES_ERREUR.TRANSITION_INTERDITE,
+        `Le périmètre d'un traitement ${traitement.statut} est figé : seule une révision en préparation peut couvrir une nouvelle modification`,
+      );
     }
     if (modification.impactDocumentaire !== "MISE_A_JOUR_REQUISE") {
       throw erreur(
@@ -558,6 +570,28 @@ export function creerAdaptateurMemoire({
         t.tracer("TRAITEMENT", traitement.id, "CREATION", auteurId, { apres: traitement });
         for (const modificationId of new Set(modificationIds)) lierTraitement(t, modificationId, traitement.id, auteurId);
         return traitement;
+      });
+    },
+
+    /**
+     * Préparation d'un traitement (indices de départ et cible, affectation),
+     * tracée avec avant/après ; possible uniquement avant soumission.
+     */
+    preparerTraitement(id, champs, { auteurId, raison } = {}) {
+      exigerAuteur(auteurId);
+      const inconnus = Object.keys(champs ?? {}).filter((c) => !CHAMPS_PREPARATION.includes(c));
+      if (inconnus.length > 0) {
+        throw erreur(CODES_ERREUR.VALIDATION, `Champs de préparation inconnus : ${inconnus.join(", ")}`);
+      }
+      return transaction((t) => {
+        const avant = exister(t.e, "traitements", id, "Traitement");
+        if (!STATUTS_TRAITEMENT_MODIFIABLES.includes(avant.statut)) {
+          throw erreur(CODES_ERREUR.TRANSITION_INTERDITE, `Un traitement ${avant.statut} ne peut plus être préparé`);
+        }
+        const nouveaux = Object.fromEntries(Object.entries(champs ?? {}).map(([c, v]) => [c, texte(v)]));
+        const apres = t.remplacer("traitements", validerTraitement({ ...avant, ...nouveaux }));
+        t.tracer("TRAITEMENT", id, "PREPARATION", auteurId, { avant, apres, raison });
+        return apres;
       });
     },
 

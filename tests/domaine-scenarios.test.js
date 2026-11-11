@@ -482,3 +482,62 @@ describe("indicateur de délai (§ 7)", () => {
     assert.ok(delai > 0);
   });
 });
+
+describe("retours de revue Codex (PR #7)", () => {
+  it("le périmètre d'un traitement est figé dès sa soumission", () => {
+    const a = adaptateurTest();
+    a.qualifierImpact("demo-mod-3", "MISE_A_JOUR_REQUISE", AUTEURS.cdp);
+    amenerEnControleBim(a, "demo-tr-1");
+    assert.throws(() => a.associerTraitement("demo-mod-3", "demo-tr-1", AUTEURS.cdp), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+    // Après rejet, le traitement redevient modifiable ; la nouvelle soumission exige de nouvelles validations.
+    a.rejeterTraitement("demo-tr-1", { ...AUTEURS.bim, motif: "Ajouter MOD-2026-0003" });
+    assert.doesNotThrow(() => a.associerTraitement("demo-mod-3", "demo-tr-1", AUTEURS.cdp));
+  });
+
+  it("l'indice cible peut être renseigné après création, avant soumission uniquement", () => {
+    const a = adaptateurTest();
+    a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", AUTEURS.rm);
+    const tr = a.creerTraitement({ documentId: "demo-doc-2", modificationIds: ["demo-mod-4"] }, AUTEURS.rm);
+    assert.throws(() => a.preparerTraitement(tr.id, { statut: "PUBLIE" }, AUTEURS.rm), avecCode(CODES_ERREUR.VALIDATION));
+    const prepare = a.preparerTraitement(tr.id, { indiceCible: "A" }, { ...AUTEURS.rm, raison: "Indice connu" });
+    assert.equal(prepare.indiceCible, "A");
+    const evenement = a.historique("TRAITEMENT", tr.id).find((e) => e.action === "PREPARATION");
+    assert.equal(evenement.avant.indiceCible, undefined);
+    assert.equal(evenement.apres.indiceCible, "A");
+    amenerEnControleBim(a, tr.id);
+    assert.throws(() => a.preparerTraitement(tr.id, { indiceCible: "B" }, AUTEURS.rm), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+    valider(a, tr.id, "BIM", "REFERENT_BIM_DEMO");
+    valider(a, tr.id, "FINALE", "RESPONSABLE_MAINTENANCE");
+    a.avancerTraitement(tr.id, "AUTORISE", AUTEURS.rm);
+    assert.equal(a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm).statut, "PUBLIE");
+  });
+
+  it("avec une horloge constante, une nouvelle soumission exige de nouvelles validations", () => {
+    const a = adaptateurTest({ horloge: () => "2026-11-01T08:00:00Z" });
+    realiser(a, "demo-mod-1");
+    realiser(a, "demo-mod-2");
+    amenerEnControleBim(a, "demo-tr-1");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    a.rejeterTraitement("demo-tr-1", { ...AUTEURS.bim, motif: "Reprise" });
+    a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
+    a.avancerTraitement("demo-tr-1", "CONTROLE_BIM", AUTEURS.bim);
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /contrôle BIM non réalisé/);
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /autorisation finale CHANTIER manquante/);
+    // À horodatage égal, c'est l'ordre d'enregistrement qui départage les décisions.
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET", "REFUSEE", "Attendre");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    assert.equal(a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp).statut, "AUTORISE");
+  });
+
+  it("avec une horloge constante, une décision SANS_IMPACT révisée exige une nouvelle validation", () => {
+    const a = adaptateurTest({ horloge: () => "2026-11-01T08:00:00Z" });
+    a.qualifierImpact("demo-mod-4", "SANS_IMPACT", { ...AUTEURS.agent, justification: "À l'identique" });
+    valider(a, "demo-mod-4", "SANS_IMPACT", "RESPONSABLE_MAINTENANCE");
+    assert.equal(statutDoc(a, "demo-mod-4"), "SANS_IMPACT_VALIDE");
+    a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", AUTEURS.rm);
+    a.qualifierImpact("demo-mod-4", "SANS_IMPACT", { ...AUTEURS.rm, justification: "Finalement identique" });
+    assert.equal(statutDoc(a, "demo-mod-4"), "SANS_IMPACT_EN_ATTENTE");
+  });
+});

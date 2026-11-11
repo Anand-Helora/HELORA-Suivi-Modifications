@@ -27,7 +27,7 @@ calculerStatutDocumentaire(donnees.instantane(), modification.id); // "A_QUALIFI
 ```
 
 - **Lecture** : `instantane()`, `lister(collection)`, `lire(collection, id)` et `historique(entiteType, entiteId)`. Tout ce qui est renvoyé est figé.
-- **Écriture** : `declarerMaintenance`, `creerOperation`, `ajouterModification`, `corrigerModification`, `changerStatutPhysique`, `qualifierImpact`, `creerLocalisation`, `associerLocalisation`, `creerDocument`, `creerTraitement`, `associerTraitement`, `avancerTraitement`, `rejeterTraitement`, `ajouterJustificatif`, `enregistrerValidation` et `reinitialiser`.
+- **Écriture** : `declarerMaintenance`, `creerOperation`, `ajouterModification`, `corrigerModification`, `changerStatutPhysique`, `qualifierImpact`, `creerLocalisation`, `associerLocalisation`, `creerDocument`, `creerTraitement`, `preparerTraitement`, `associerTraitement`, `avancerTraitement`, `rejeterTraitement`, `ajouterJustificatif`, `enregistrerValidation` et `reinitialiser`.
 - **Atomicité** : chaque écriture travaille sur un brouillon de l'état, qui n'est appliqué que si toutes les règles sont respectées. Aucune création partielle n'est donc possible, par exemple une opération sans sa modification.
 - **Double clic** : `declarerMaintenance` exige une `cleIdempotence`, à générer une fois par ouverture de formulaire. Un second appel avec la même clé renvoie le premier résultat sans rien créer.
 - **Historique** : chaque écriture ajoute un événement (`avant`, `apres`, `raison`). Le journal n'accepte que des ajouts, et la déclaration initiale reste consultable après une correction.
