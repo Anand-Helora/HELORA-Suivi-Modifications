@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr" data-theme="hybride">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#041318" />
+  <meta name="description" content="Démonstration autonome des quatre ambiances HELORA Design, sans données métier réelles." />
+  <title>HELORA Design · quatre ambiances</title>
+  <link rel="stylesheet" href="../../src/helora-design/themes.css" />
+  <link rel="stylesheet" href="../../src/helora-design/composants.css" />
+  <script src="../../src/helora-design/theme-initial.js"></script>
+  <script type="module" src="./demo.js"></script>
+</head>
+<body class="helora-page">
+  <div id="decor" class="helora-ambiance" aria-hidden="true"></div>
+  <a class="helora-lien-evitement" href="#contenu">Aller au contenu</a>
+  <div class="helora-design-contenu">
+    <header class="helora-entete helora-coquille">
+      <div class="helora-marque">
+        <span class="helora-logo" aria-hidden="true">✧</span>
+        <div>
+          <p class="helora-surtitre">Bibliothèque visuelle · Démonstration</p>
+          <p class="helora-titre">HELORA Design System</p>
+          <p class="helora-legende">Quatre ambiances, un seul parcours métier.</p>
+        </div>
+      </div>
+      <div class="helora-commande-groupe">
+        <fieldset class="helora-selecteur" id="choix-theme">
+          <legend>Choisir une ambiance visuelle</legend>
+          <label class="helora-choix"><input type="radio" name="theme" value="clair" /><span>Clair premium</span></label>
+          <label class="helora-choix"><input type="radio" name="theme" value="neural" /><span>Neural</span></label>
+          <label class="helora-choix"><input type="radio" name="theme" value="orbital" /><span>Orbital</span></label>
+          <label class="helora-choix"><input type="radio" name="theme" value="hybride" /><span>Hybride</span></label>
+        </fieldset>
+        <button id="pause" type="button" class="helora-bouton helora-bouton--secondaire helora-pause">Mettre en pause l'animation</button>
+      </div>
+    </header>
+
+    <main id="contenu" class="helora-coquille" style="padding-top:clamp(32px,7vw,74px); padding-bottom:90px;">
+      <div style="max-width:680px; margin-bottom:36px;">
+        <span class="helora-etiquette">Prototype fictif · Aucune donnée réelle</span>
+        <h1 style="font-size:clamp(2.5rem,6vw,5rem);letter-spacing:-.055em;line-height:1.05;margin:22px 0 18px;">Des informations fiables.<br><span style="color:var(--accent-texte)">Une interface vivante.</span></h1>
+        <p class="helora-sous-titre" style="font-size:1.05rem;">Exemple d'une future interface de suivi documentaire. Le graphisme change ; les données, la navigation et l'accessibilité restent identiques.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:25px;">
+          <button class="helora-bouton" id="afficher-explication" type="button" aria-controls="explication" aria-expanded="false">Voir le principe</button>
+          <a class="helora-bouton helora-bouton--secondaire" href="../../docs/ux-ui-guidelines.md">Lire le référentiel UX</a>
+        </div>
+        <div id="explication" class="helora-panneau" hidden style="margin-top:20px;">
+          <strong>Un design indépendant du métier.</strong>
+          <p class="helora-sous-titre">Les couleurs, les formes et les scènes décoratives sont partagées par plusieurs applications. Les données et les processus restent sous la responsabilité de chaque projet.</p>
+        </div>
+      </div>
+
+      <section aria-labelledby="titre-kpi" style="margin-top:45px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:15px">
+          <h2 class="helora-titre" id="titre-kpi" style="font-size:1.2rem">Vue synthétique</h2>
+          <span class="helora-legende">Exemple non connecté</span>
+        </div>
+        <div class="helora-grille">
+          <article class="helora-panneau helora-kpi">
+            <p class="helora-kpi__libelle">Modifications enregistrées</p>
+            <strong class="helora-kpi__nombre">128</strong>
+            <p class="helora-kpi__note">Données fictives de démonstration</p>
+          </article>
+          <article class="helora-panneau helora-kpi">
+            <p class="helora-kpi__libelle">Documents à vérifier</p>
+            <strong class="helora-kpi__nombre">24</strong>
+            <p class="helora-kpi__note">Validation en attente</p>
+          </article>
+          <article class="helora-panneau helora-kpi">
+            <p class="helora-kpi__libelle">Versions publiées</p>
+            <strong class="helora-kpi__nombre">104</strong>
+            <p class="helora-kpi__note">Historique illustratif</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="helora-deux-colonnes" style="margin-top:18px" aria-label="Exemple de gestion documentaire">
+        <article class="helora-panneau helora-panneau--verre">
+          <p class="helora-surtitre">Vue opérationnelle</p>
+          <h2 class="helora-titre" style="font-size:1.35rem;margin-bottom:18px">Dernières modifications</h2>
+          <ul class="helora-liste">
+            <li class="helora-ligne"><div><strong>Révision du réseau fictif</strong><small>Démonstration · Local DEMO-001</small></div><span class="helora-etiquette">À vérifier</span></li>
+            <li class="helora-ligne"><div><strong>Actualisation d'un plan exemple</strong><small>Démonstration · Local DEMO-002</small></div><span class="helora-etiquette">En cours</span></li>
+            <li class="helora-ligne"><div><strong>Document d'essai publié</strong><small>Démonstration · Local DEMO-003</small></div><span class="helora-etiquette">Publié</span></li>
+          </ul>
+        </article>
+        <aside class="helora-panneau helora-panneau--verre">
+          <p class="helora-surtitre">Charte dynamique</p>
+          <h2 class="helora-titre" style="font-size:1.35rem">Une base, quatre univers</h2>
+          <p class="helora-sous-titre" style="margin-top:17px">Teste Clair premium pour le travail prolongé, Neural pour les connexions, Orbital pour les trajectoires et Hybride pour leur combinaison.</p>
+          <hr class="helora-separateur">
+          <p class="helora-legende">Animations décoratives, désactivables ; changement de thème sans rechargement ni perte de focus.</p>
+          <div style="display:flex;gap:7px;margin-top:20px" aria-hidden="true">
+            <span style="width:46px;height:8px;background:#044550;border-radius:9px"></span>
+            <span style="width:46px;height:8px;background:#009E99;border-radius:9px"></span>
+            <span style="width:46px;height:8px;background:#E6F5F5;border-radius:9px"></span>
+          </div>
+        </aside>
+      </section>
+      <p class="helora-legende" style="margin-top:28px">Démonstration UI uniquement. Aucune donnée d'établissement, aucune API, aucune intégration SharePoint.</p>
+    </main>
+  </div>
+</body>
+</html>

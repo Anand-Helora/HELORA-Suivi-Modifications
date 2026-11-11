@@ -1,0 +1,526 @@
+/* HELORA Design — jetons et scènes du pilote V4 validé.
+ * Sous-système visuel isolé de l'application : aucun CSS de tableau de bord.
+ * Importer aussi composants.css pour les primitives réutilisables.
+ * Licence : code du projet de l'utilisateur. Aucune dépendance externe.
+ */
+
+/*
+ * HELORA Futuristic — V4 « quatre ambiances » (pilote, à valider ; Issue #5).
+ *
+ * Architecture : le thème est porté par html[data-theme] (posé avant le
+ * premier rendu par src/theme-initial.js). Chaque thème redéfinit des
+ * propriétés personnalisées ; les composants ne sont jamais dupliqués.
+ * Un thème ne change QUE couleurs, ombres, rayons et décor — jamais les
+ * marges, tailles ou épaisseurs : basculer de thème ne décale pas la page.
+ *
+ * Couleurs de base conservées : #044550, #009E99, #E6F5F5.
+ * Règles de lisibilité (tous thèmes) :
+ * - #009E99 n'est jamais une couleur de texte (bordures, symboles, décor) ;
+ * - tout texte de moins de 24 px est posé sur une surface opaque (ou ≥ 0,8) ;
+ * - le décor évite la bande du grand titre (zone calme, voir ambiance.js)
+ *   et y est en plus estompé par un masque.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Jetons communs (géométrie identique dans tous les thèmes).
+ * ------------------------------------------------------------------------- */
+:root {
+  --transition: 160ms ease-out;
+  --courbe: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --police: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --police-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  font-family: var(--police);
+  line-height: 1.5;
+}
+
+/* Hybride (défaut) : « Docking » — surfaces Abysse, réseau + orbites. */
+:root,
+:root[data-theme="hybride"] {
+  color-scheme: dark;
+  --fond: #021519;
+  --fond-image:
+    radial-gradient(120% 80% at 0% 0%, rgba(4, 69, 80, 0.85) 0%, transparent 60%),
+    radial-gradient(80% 70% at 100% 100%, rgba(0, 158, 153, 0.16) 0%, transparent 65%),
+    linear-gradient(180deg, #031e24 0%, #021519 100%);
+  --surface: #0a2e35;
+  --surface-haute: #0d353d;
+  --surface-voile: rgba(10, 46, 53, 0.82);
+  --bandeau-fond: #0a2e35;
+  --bandeau-verre: linear-gradient(180deg, rgba(13, 53, 61, 0.66), rgba(10, 46, 53, 0.55));
+  --texte: #e6f5f5;
+  --texte-2: #a9c4c6;
+  --accent: #009e99;
+  --accent-texte: #5fd6d0;
+  --focus: #5fd6d0;
+  --halo-focus: rgba(95, 214, 208, 0.22);
+  --filet: rgba(95, 214, 208, 0.16);
+  --filet-fort: rgba(95, 214, 208, 0.5);
+  --reflet: rgba(230, 245, 245, 0.08);
+  --ombre: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+  --lueur: 0 0 0 1px rgba(95, 214, 208, 0.35), 0 8px 28px -10px rgba(0, 158, 153, 0.45);
+  --rail-retard: #e6f5f5;
+  --rail-prioritaire: #5fd6d0;
+  --rail-controle: #a9c4c6;
+  --badge-fond: rgba(0, 158, 153, 0.14);
+  --badge-bord: #5fd6d0;
+  --erreur: #ffb4a8;
+  --bouton-fond: #009e99;
+  --bouton-fond-survol: #5fd6d0;
+  --bouton-texte: #031e24;
+  --choix-fond: rgba(95, 214, 208, 0.16);
+  --choix-bord: #5fd6d0;
+  --choix-texte: #e6f5f5;
+  --survol-fond: rgba(4, 69, 80, 0.85);
+  --rayon: 12px;
+  --rayon-panneau: 16px;
+  --rayon-commande: 999px;
+  /* Décor de panneau : liseré lumineux courbe (Orbital) en haut. */
+  --deco-panneau: radial-gradient(55% 36px at 50% 0, rgba(95, 214, 208, 0.14), transparent);
+  --deco-fiche:
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top left / 12px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top left / 1px 12px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom right / 12px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom right / 1px 12px no-repeat,
+    radial-gradient(55% 36px at 50% 0, rgba(95, 214, 208, 0.14), transparent);
+}
+
+/* Neural : « Synapses » — quasi-noir turquoise, grammaire angulaire. */
+:root[data-theme="neural"] {
+  --fond: #010608;
+  --fond-image:
+    radial-gradient(60% 50% at 18% 22%, rgba(0, 158, 153, 0.1) 0%, transparent 70%),
+    radial-gradient(50% 50% at 88% 80%, rgba(0, 120, 120, 0.12) 0%, transparent 70%),
+    linear-gradient(180deg, #020c0f 0%, #010608 100%);
+  --surface: #061316;
+  --surface-haute: #08191d;
+  --surface-voile: rgba(6, 19, 22, 0.88);
+  --bandeau-fond: #061316;
+  --bandeau-verre: linear-gradient(180deg, rgba(8, 25, 29, 0.7), rgba(6, 19, 22, 0.6));
+  --accent-texte: #6ff0e6;
+  --focus: #6ff0e6;
+  --filet: rgba(111, 240, 230, 0.15);
+  --filet-fort: rgba(111, 240, 230, 0.5);
+  --rail-prioritaire: #6ff0e6;
+  --badge-bord: #6ff0e6;
+  --choix-bord: #6ff0e6;
+  --rayon: 6px;
+  --rayon-panneau: 8px;
+  --rayon-commande: 6px;
+  --deco-panneau:
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top left / 10px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top left / 1px 10px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top right / 10px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) top right / 1px 10px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom left / 10px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom left / 1px 10px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom right / 10px 1px no-repeat,
+    linear-gradient(var(--filet-fort), var(--filet-fort)) bottom right / 1px 10px no-repeat;
+  --deco-fiche: var(--deco-panneau);
+}
+
+/* Orbital : « Système » — bleu nuit profond, rondeur, lumière glacier. */
+:root[data-theme="orbital"] {
+  --fond: #040b17;
+  --fond-image:
+    radial-gradient(90% 70% at 85% 90%, rgba(17, 112, 122, 0.4) 0%, transparent 60%),
+    radial-gradient(70% 60% at 0% 0%, rgba(40, 70, 120, 0.35) 0%, transparent 65%),
+    linear-gradient(180deg, #071426 0%, #040b17 100%);
+  --surface: #0c1d2e;
+  --surface-haute: #102638;
+  --surface-voile: rgba(12, 29, 46, 0.9);
+  --bandeau-fond: #0c1d2e;
+  --bandeau-verre: linear-gradient(180deg, rgba(16, 38, 56, 0.66), rgba(12, 29, 46, 0.55));
+  --texte-2: #a9c3d2;
+  --accent-texte: #7fdcf0;
+  --focus: #7fdcf0;
+  --halo-focus: rgba(127, 220, 240, 0.22);
+  --filet: rgba(127, 220, 240, 0.16);
+  --filet-fort: rgba(127, 220, 240, 0.5);
+  --lueur: 0 0 0 1px rgba(127, 220, 240, 0.35), 0 10px 32px -10px rgba(64, 160, 220, 0.45);
+  --rail-prioritaire: #7fdcf0;
+  --rail-controle: #a9c3d2;
+  --badge-fond: rgba(127, 220, 240, 0.12);
+  --badge-bord: #7fdcf0;
+  --bouton-fond: #5fd6d0;
+  --bouton-fond-survol: #a6f0ff;
+  --bouton-texte: #04121c;
+  --choix-fond: rgba(127, 220, 240, 0.16);
+  --choix-bord: #7fdcf0;
+  --survol-fond: rgba(20, 52, 76, 0.9);
+  --rayon: 18px;
+  --rayon-panneau: 22px;
+  --rayon-commande: 999px;
+  --deco-panneau: radial-gradient(60% 40px at 50% 0, rgba(127, 220, 240, 0.16), transparent);
+  --deco-fiche: var(--deco-panneau);
+}
+
+/* Clair premium : « Laboratoire de jour » — calme, lumineux, sans mouvement. */
+:root[data-theme="clair"] {
+  color-scheme: light;
+  --fond: #eef6f6;
+  --fond-image:
+    radial-gradient(90% 60% at 100% 0%, rgba(0, 158, 153, 0.1) 0%, transparent 60%),
+    radial-gradient(80% 60% at 0% 100%, rgba(4, 69, 80, 0.06) 0%, transparent 60%),
+    linear-gradient(180deg, #f5fafa 0%, #e6f5f5 100%);
+  --surface: #ffffff;
+  --surface-haute: #ffffff;
+  --surface-voile: rgba(255, 255, 255, 0.72);
+  --bandeau-fond: #ffffff;
+  --bandeau-verre: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.74));
+  --texte: #0b2a30;
+  --texte-2: #3f5f64;
+  --accent: #009e99;
+  --accent-texte: #00706c;
+  --focus: #044550;
+  --halo-focus: rgba(0, 158, 153, 0.28);
+  --filet: #d3e7e7;
+  --filet-fort: #8cc7c5;
+  --reflet: rgba(255, 255, 255, 0.9);
+  --ombre: 0 1px 2px rgba(4, 69, 80, 0.06), 0 10px 28px -12px rgba(4, 69, 80, 0.16);
+  --lueur: 0 0 0 1px rgba(0, 158, 153, 0.45), 0 12px 30px -12px rgba(0, 158, 153, 0.35);
+  --rail-retard: #044550;
+  --rail-prioritaire: #009e99;
+  --rail-controle: #3f5f64;
+  --badge-fond: #e6f5f5;
+  --badge-bord: #009e99;
+  --erreur: #b3261e;
+  --bouton-fond: #044550;
+  --bouton-fond-survol: #00706c;
+  --bouton-texte: #ffffff;
+  --choix-fond: #044550;
+  --choix-bord: #044550;
+  --choix-texte: #ffffff;
+  --pastille-fond: #ffffff;
+  --pastille-texte: #044550;
+  --survol-fond: #f3fafa;
+  --rayon: 12px;
+  --rayon-panneau: 16px;
+  --rayon-commande: 999px;
+  --deco-panneau: linear-gradient(180deg, rgba(230, 245, 245, 0.6), transparent 40px);
+  --deco-fiche: var(--deco-panneau);
+}
+
+/* ---------------------------------------------------------------------------
+ * Ambiance (décor) : calque fixe sous le contenu, non interactif, masqué aux
+ * technologies d'assistance. Le SVG est généré par src/ambiance.js ; tout le
+ * mouvement est en CSS ci-dessous.
+ * ------------------------------------------------------------------------- */
+.helora-ambiance {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.helora-design-contenu {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Réseau (Neural, Hybride) ------------------------------------------- */
+.n-lien {
+  stroke: #5fd6d0;
+  stroke-width: 1;
+  stroke-opacity: 0.22;
+}
+
+.n-lien--arrimage {
+  stroke-opacity: 0.22;
+  stroke-dasharray: 2 5;
+}
+
+.n-lien--respire {
+  animation: respiration var(--duree) ease-in-out var(--delai) infinite alternate;
+}
+
+.n-noeud {
+  fill: #5fd6d0;
+  fill-opacity: 0.6;
+}
+
+/* Neural : réseau plus électrique (distinct d'Hybride). */
+.scene--neural .n-lien,
+.scene--neural .impulsion--trainee {
+  stroke: #6ff0e6;
+}
+
+.scene--neural .n-noeud {
+  fill: #6ff0e6;
+}
+
+.n-noeud--hub {
+  fill: #bffaf4;
+  fill-opacity: 0.85;
+}
+
+.n-hub {
+  fill: url(#g-hub);
+  opacity: 0.6;
+}
+
+.n-poussiere {
+  fill: #a9c4c6;
+  fill-opacity: 0.28;
+}
+
+/* Impulsion : un tiret lumineux (tête) suivi de sa traîne. Le chemin mesure
+   100 ; le front avance de 0 à 118 pendant 55 % du cycle, puis repos. */
+.impulsion {
+  fill: none;
+  stroke-linecap: round;
+  animation: var(--voyage) var(--duree) cubic-bezier(0.45, 0.05, 0.55, 0.95) var(--delai) infinite backwards;
+}
+
+.impulsion--tete {
+  --voyage: voyage-tete;
+  stroke: #e6fffc;
+  stroke-width: 4;
+  stroke-dasharray: 3 300;
+  stroke-dashoffset: 3;
+}
+
+.impulsion--trainee {
+  --voyage: voyage-trainee;
+  stroke: #5fd6d0;
+  stroke-width: 2.6;
+  stroke-opacity: 0.6;
+  stroke-dasharray: 18 300;
+  stroke-dashoffset: 18;
+}
+
+.eclat {
+  fill: url(#g-eclat);
+  opacity: 0;
+  animation: eclat var(--duree) ease-out var(--delai) infinite backwards;
+}
+
+/* Pas de dérive d'ensemble des plans : translater un groupe SVG entier force
+   à repeindre toute la scène à chaque image (fluidité divisée par ~2 sans
+   GPU, mesuré) pour un effet de quelques pixels à peine perceptible. Seuls
+   de petits éléments bougent : impulsions, éclats, satellites. */
+
+/* --- Orbites (Orbital, Hybride) ----------------------------------------- */
+.o-orbite {
+  fill: none;
+  stroke: #7fdcf0;
+  stroke-width: 1;
+}
+
+.o-orbite--1 {
+  stroke-opacity: 0.36;
+}
+
+.o-orbite--2 {
+  stroke-opacity: 0.24;
+}
+
+.o-orbite--3 {
+  stroke-opacity: 0.18;
+  stroke-dasharray: 0.6 0.9;
+}
+
+.o-lisere {
+  fill: none;
+  stroke: #9feefa;
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+  stroke-linecap: round;
+}
+
+.o-poussiere {
+  fill: #cfe8f2;
+  fill-opacity: 0.22;
+}
+
+.o-lune {
+  opacity: 0.9;
+}
+
+/* Satellite : un point (tiret quasi nul, bout rond) ; traîne : arc fin. */
+.o-satellite,
+.o-aura,
+.o-trainee,
+.o-balayage {
+  fill: none;
+  stroke-linecap: round;
+  animation: orbite var(--duree) linear var(--delai) infinite;
+}
+
+.o-satellite {
+  stroke: #e9fdff;
+  stroke-dasharray: 0.001 99.999;
+}
+
+.o-satellite--1 {
+  stroke-width: 11;
+}
+
+.o-satellite--2 {
+  stroke-width: 8;
+}
+
+.o-satellite--3 {
+  stroke-width: 6;
+}
+
+/* Aura : même point, très large et diffus (lueur sans filtre coûteux). */
+.o-aura {
+  stroke: #7fdcf0;
+  stroke-opacity: 0.16;
+  stroke-dasharray: 0.001 99.999;
+}
+
+.o-aura--1 {
+  stroke-width: 34;
+}
+
+.o-aura--2 {
+  stroke-width: 24;
+}
+
+.o-aura--3 {
+  stroke-width: 18;
+}
+
+.o-trainee {
+  stroke: #7fdcf0;
+  stroke-width: 2.6;
+  stroke-opacity: 0.6;
+  /* Traîne DERRIÈRE le satellite : l'animation `orbite` avance vers les
+     abscisses croissantes ; le tiret occupe [position − 12, position]. */
+  stroke-dasharray: 0 88 12 0;
+}
+
+.o-balayage {
+  stroke: #5fd6d0;
+  stroke-width: 2.5;
+  stroke-opacity: 0.5;
+  stroke-dasharray: 11 89;
+}
+
+/* Hybride : orbites turquoise (filiation réseau), planète plus petite. */
+.scene--hybride .o-orbite {
+  stroke: #5fd6d0;
+}
+
+.scene--hybride .o-trainee,
+.scene--hybride .o-aura {
+  stroke: #5fd6d0;
+}
+
+/* --- Clair premium : décor fixe ------------------------------------------ */
+.c-arc {
+  fill: none;
+  stroke: #009e99;
+  stroke-width: 1;
+}
+
+.c-arc--1 {
+  stroke-opacity: 0.22;
+}
+
+.c-arc--2 {
+  stroke-opacity: 0.12;
+}
+
+.c-point {
+  fill: #009e99;
+  fill-opacity: 0.35;
+}
+
+/* --- Chorégraphies -------------------------------------------------------- */
+/* Front du tiret : de 0 à 118 (fin du chemin + longueur de la traîne). */
+@keyframes voyage-tete {
+  0% {
+    stroke-dashoffset: 3;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: -115;
+  }
+}
+
+@keyframes voyage-trainee {
+  0% {
+    stroke-dashoffset: 18;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes eclat {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  32%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes respiration {
+  from {
+    stroke-opacity: 0.05;
+  }
+  to {
+    stroke-opacity: 0.34;
+  }
+}
+
+@keyframes orbite {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* Ambiance en pause (bouton) ou onglet masqué : figée sur place, sans saut. */
+.helora-design-en-pause .helora-ambiance *,
+.helora-design-suspendue .helora-ambiance * {
+  animation-play-state: paused !important;
+}
+
+/* Règles autonomes : aucune dépendance aux cartes ou aux bandeaux du pilote. */
+.helora-ambiance {
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helora-ambiance * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .helora-ambiance .o-satellite,
+  .helora-ambiance .o-aura,
+  .helora-ambiance .o-trainee,
+  .helora-ambiance .o-balayage {
+    stroke-dashoffset: var(--o-fixe);
+  }
+  .helora-ambiance .impulsion {
+    visibility: hidden;
+  }
+  .helora-ambiance .eclat--fixe {
+    opacity: 0.8;
+  }
+}
+
+@media (forced-colors: active) {
+  .helora-ambiance { display: none; }
+}

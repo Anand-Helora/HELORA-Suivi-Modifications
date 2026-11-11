@@ -1,0 +1,13 @@
+{
+  "name": "helora-template-multiia",
+  "version": "0.1.0",
+  "description": "Modèle léger pour petites applications web HTML/CSS/JavaScript",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
