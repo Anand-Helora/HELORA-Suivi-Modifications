@@ -593,3 +593,26 @@ describe("revue complémentaire du propriétaire (PR #7)", () => {
     assert.throws(() => valider(a, "demo-tr-1", "FINALE", "REFERENT_BIM"), GARDE);
   });
 });
+
+describe("retour Codex (2e passage, PR #7)", () => {
+  it("un refus technique enregistré après publication retire le statut A_JOUR", () => {
+    const a = adaptateurTest();
+    a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", { ...AUTEURS.rm, exigences: { controleTechnique: true, justificatifs: [] } });
+    const tr = a.creerTraitement({ documentId: "demo-doc-2", indiceCible: "B", modificationIds: ["demo-mod-4"] }, AUTEURS.rm);
+    valider(a, "demo-mod-4", "TECHNIQUE", "RESPONSABLE_TECHNIQUE");
+    amenerEnControleBim(a, tr.id);
+    valider(a, tr.id, "BIM", "REFERENT_BIM");
+    valider(a, tr.id, "FINALE", "RESPONSABLE_MAINTENANCE");
+    a.avancerTraitement(tr.id, "AUTORISE", AUTEURS.rm);
+    a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm);
+    assert.equal(statutDoc(a, "demo-mod-4"), "A_JOUR");
+    const avant = calculerCompteurs(a.instantane()).realiseesNonAJour;
+
+    valider(a, "demo-mod-4", "TECHNIQUE", "RESPONSABLE_TECHNIQUE", "REFUSEE", "Défaut constaté après coup");
+    assert.equal(statutDoc(a, "demo-mod-4"), "EN_VALIDATION");
+    assert.equal(calculerCompteurs(a.instantane()).realiseesNonAJour, avant + 1);
+
+    valider(a, "demo-mod-4", "TECHNIQUE", "RESPONSABLE_TECHNIQUE");
+    assert.equal(statutDoc(a, "demo-mod-4"), "A_JOUR");
+  });
+});

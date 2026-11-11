@@ -181,9 +181,23 @@ export function calculerStatutDocumentaire(contexte, modificationId) {
   const statut = traitements
     .map((t) => STATUT_AFFICHE_PAR_TRAITEMENT[t.statut])
     .reduce((min, s) => (RANG_AFFICHE[s] < RANG_AFFICHE[min] ? s : min));
-  // Une modification non réalisée ne peut pas être considérée achevée.
-  if (statut === "A_JOUR" && modification.statutPhysique !== "REALISEE") return "EN_VALIDATION";
+  // A_JOUR exige aussi que la modification soit réalisée et que les validations
+  // requises soient toujours acquises : un refus technique enregistré après la
+  // publication ramène le statut affiché à EN_VALIDATION (interprétation à confirmer).
+  if (statut === "A_JOUR" && (modification.statutPhysique !== "REALISEE" || !controleTechniqueSatisfait(contexte, modification))) {
+    return "EN_VALIDATION";
+  }
   return statut;
+}
+
+/** Vrai si aucun contrôle technique n'est exigé, ou si la dernière décision technique est une approbation. */
+export function controleTechniqueSatisfait(contexte, modification) {
+  if (!modification.exigences?.controleTechnique) return true;
+  return estApprouvee(
+    derniereValidation(contexte, {
+      cibleType: "MODIFICATION", cibleId: modification.id, nature: "TECHNIQUE", roleAuMoment: ROLE_PAR_NATURE.TECHNIQUE,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -275,12 +289,7 @@ export function problemesPublication(contexte, traitementId) {
     if (m.impactDocumentaire !== "MISE_A_JOUR_REQUISE") {
       problemes.push(`${m.reference} : mise à jour documentaire non qualifiée comme requise`);
     }
-    if (m.exigences?.controleTechnique) {
-      const technique = derniereValidation(contexte, {
-        cibleType: "MODIFICATION", cibleId: m.id, nature: "TECHNIQUE", roleAuMoment: ROLE_PAR_NATURE.TECHNIQUE,
-      });
-      if (!estApprouvee(technique)) problemes.push(`${m.reference} : contrôle technique requis non attesté`);
-    }
+    if (!controleTechniqueSatisfait(contexte, m)) problemes.push(`${m.reference} : contrôle technique requis non attesté`);
     const manquants = justificatifsManquants(contexte, m, { traitementId });
     if (manquants.length > 0) problemes.push(`${m.reference} : justificatifs manquants (${manquants.join(", ")})`);
   }
