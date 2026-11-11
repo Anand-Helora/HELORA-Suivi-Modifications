@@ -600,6 +600,46 @@ export function creerAdaptateurMemoire({
       return transaction((t) => lierTraitement(t, modificationId, traitementId, auteurId));
     },
 
+    /**
+     * Retire du périmètre d'un traitement une modification ANNULEE (décision
+     * métier du 11/11/2026, option A). Motif obligatoire ; uniquement en
+     * préparation (A_PREPARER / EN_COURS) : un traitement soumis doit d'abord
+     * être rejeté, et sa nouvelle soumission exige de nouvelles validations.
+     * Un traitement PUBLIE est immuable (cas non pris en charge par le MVP).
+     * La modification reste dans le registre ; seul ce lien est retiré, et la
+     * dissociation est tracée (l'association initiale reste dans l'historique).
+     * Un lien par appel : plusieurs traitements se dissocient un à un.
+     */
+    dissocierTraitement(modificationId, traitementId, { auteurId, raison } = {}) {
+      exigerAuteur(auteurId);
+      if (!estChaineNonVide(raison)) throw erreur(CODES_ERREUR.VALIDATION, "Une dissociation doit être motivée");
+      return transaction((t) => {
+        const modification = exister(t.e, "modifications", modificationId, "Modification");
+        const traitement = exister(t.e, "traitements", traitementId, "Traitement");
+        const lien = t.e.liensTraitement.find((l) => l.modificationId === modificationId && l.traitementId === traitementId);
+        if (!lien) throw erreur(CODES_ERREUR.INTROUVABLE, "Cette modification n'est pas couverte par ce traitement");
+        if (modification.statutPhysique !== "ANNULEE") {
+          throw erreur(CODES_ERREUR.GARDE_NON_SATISFAITE, `${modification.reference} : seule une modification ANNULEE peut être dissociée`);
+        }
+        if (traitement.statut === "PUBLIE") {
+          throw erreur(
+            CODES_ERREUR.TRANSITION_INTERDITE,
+            "Un traitement publié est immuable : l'annulation après publication n'est pas prise en charge par ce MVP",
+          );
+        }
+        if (!STATUTS_TRAITEMENT_MODIFIABLES.includes(traitement.statut)) {
+          throw erreur(
+            CODES_ERREUR.TRANSITION_INTERDITE,
+            `Traitement ${traitement.statut} : le rejeter (motif) avant de dissocier une modification, puis le soumettre de nouveau`,
+          );
+        }
+        t.e.liensTraitement = t.e.liensTraitement.filter((l) => l !== lien);
+        t.tracer("TRAITEMENT", traitementId, "MODIFICATION_DISSOCIEE", auteurId, { avant: lien, raison });
+        t.tracer("MODIFICATION", modificationId, "TRAITEMENT_DISSOCIE", auteurId, { avant: lien, raison });
+        return lien;
+      });
+    },
+
     /** Avance un traitement ; AUTORISE et PUBLIE sont soumis aux gardes de `statuts.js`. */
     avancerTraitement(id, statut, { auteurId } = {}) {
       exigerAuteur(auteurId);

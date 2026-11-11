@@ -616,3 +616,92 @@ describe("retour Codex (2e passage, PR #7)", () => {
     assert.equal(statutDoc(a, "demo-mod-4"), "A_JOUR");
   });
 });
+
+describe("décision métier : dissociation des modifications annulées (option A)", () => {
+  const motif = { ...AUTEURS.cdp, raison: "Modification abandonnée" };
+
+  it("révision partagée : blocage, rejet, dissociation, nouvelles validations, publication de la seule modification réalisée", () => {
+    const a = adaptateurTest({ horloge: () => "2026-11-01T08:00:00Z" });
+    realiser(a, "demo-mod-1");
+    a.changerStatutPhysique("demo-mod-2", "ANNULEE", { ...AUTEURS.cdp, motif: "Abandon fictif" });
+    amenerEnControleBim(a, "demo-tr-1");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
+    // Blocage initial : la modification annulée empêche la publication.
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp), /MOD-2026-0002 : travaux non réalisés/);
+    // Traitement autorisé : dissociation refusée tant qu'il n'est pas rejeté.
+    assert.throws(() => a.dissocierTraitement("demo-mod-2", "demo-tr-1", motif), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+
+    a.rejeterTraitement("demo-tr-1", { ...AUTEURS.cdp, motif: "Retirer MOD-2026-0002 annulée" });
+    a.dissocierTraitement("demo-mod-2", "demo-tr-1", motif);
+    a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
+    a.avancerTraitement("demo-tr-1", "CONTROLE_BIM", AUTEURS.bim);
+    // Les anciens contrôles ne suffisent pas.
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /contrôle BIM non réalisé/);
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
+    a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp);
+
+    assert.equal(statutDoc(a, "demo-mod-1"), "A_JOUR");
+    const annulee = a.lire("modifications", "demo-mod-2");
+    assert.equal(annulee.statutPhysique, "ANNULEE");
+    assert.notEqual(statutDoc(a, "demo-mod-2"), "A_JOUR");
+    assert.equal(a.lister("traitements").filter((t) => t.documentId === "demo-doc-1").length, 1);
+    // L'historique conserve l'association puis la dissociation.
+    const historique = a.historique("TRAITEMENT", "demo-tr-1").map((e) => e.action);
+    assert.ok(historique.includes("MODIFICATION_DISSOCIEE"));
+    const dissociation = a.historique("MODIFICATION", "demo-mod-2").find((e) => e.action === "TRAITEMENT_DISSOCIE");
+    assert.deepEqual({ ...dissociation.avant }, { modificationId: "demo-mod-2", traitementId: "demo-tr-1" });
+    assert.equal(dissociation.raison, "Modification abandonnée");
+    // Les indicateurs ne portent que sur les modifications réalisées distinctes.
+    assert.equal(calculerCompteurs(a.instantane(), { operationId: "demo-op-1" }).realiseesNonAJour, 0);
+  });
+
+  it("refuse sans mutation : sans motif, lien inexistant, modification non annulée, traitement soumis ou publié", () => {
+    const a = adaptateurTest();
+    a.changerStatutPhysique("demo-mod-2", "ANNULEE", { ...AUTEURS.cdp, motif: "Abandon" });
+    const initial = a.instantane();
+    assert.throws(() => a.dissocierTraitement("demo-mod-2", "demo-tr-1", AUTEURS.cdp), avecCode(CODES_ERREUR.VALIDATION));
+    assert.throws(() => a.dissocierTraitement("demo-mod-3", "demo-tr-1", motif), avecCode(CODES_ERREUR.INTROUVABLE));
+    assert.throws(() => a.dissocierTraitement("demo-mod-1", "demo-tr-1", motif), GARDE);
+    a.avancerTraitement("demo-tr-1", "EN_COURS", AUTEURS.bim);
+    a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
+    const soumis = a.instantane();
+    assert.throws(() => a.dissocierTraitement("demo-mod-2", "demo-tr-1", motif), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+    assert.deepEqual(a.instantane(), soumis);
+    assert.equal(initial.liensTraitement.length, soumis.liensTraitement.length);
+  });
+
+  it("un traitement publié reste immuable", () => {
+    // Une modification réalisée ne peut plus être annulée ; le cas « annulée après publication »
+    // est simulé par des fixtures pour vérifier l'immuabilité du traitement publié.
+    const b = adaptateurTest({
+      fixtures: () => {
+        const f = creerFixturesDemo();
+        f.modifications = f.modifications.map((m) => (m.id === "demo-mod-1" ? { ...m, statutPhysique: "ANNULEE" } : m));
+        f.traitements = f.traitements.map((t) => ({ ...t, statut: "PUBLIE", datePublication: "2026-10-01T08:00:00Z" }));
+        return f;
+      },
+    });
+    assert.throws(
+      () => b.dissocierTraitement("demo-mod-1", "demo-tr-1", motif),
+      /immuable : l'annulation après publication n'est pas prise en charge/,
+    );
+    assert.equal(b.lister("liensTraitement").length, 2);
+  });
+
+  it("plusieurs traitements : les liens se dissocient un à un ; un traitement vidé n'est ni autorisable ni publiable", () => {
+    const a = adaptateurTest();
+    const tr2 = a.creerTraitement({ documentId: "demo-doc-2", indiceCible: "A", modificationIds: ["demo-mod-2"] }, AUTEURS.cdp);
+    a.changerStatutPhysique("demo-mod-2", "ANNULEE", { ...AUTEURS.cdp, motif: "Abandon" });
+    a.dissocierTraitement("demo-mod-2", tr2.id, motif);
+    // Le lien vers l'autre traitement n'est pas supprimé implicitement.
+    assert.equal(a.lister("liensTraitement").filter((l) => l.modificationId === "demo-mod-2").length, 1);
+    amenerEnControleBim(a, tr2.id);
+    assert.throws(() => valider(a, tr2.id, "FINALE", "CHEF_PROJET"), GARDE);
+    valider(a, tr2.id, "BIM", "REFERENT_BIM");
+    assert.throws(() => a.avancerTraitement(tr2.id, "AUTORISE", AUTEURS.cdp), /aucune modification n'est couverte/);
+  });
+});
