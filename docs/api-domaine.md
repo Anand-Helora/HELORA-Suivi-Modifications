@@ -40,7 +40,7 @@ calculerStatutDocumentaire(donnees.instantane(), modification.id); // "A_QUALIFI
 Ces interprétations sont isolées dans les constantes et les tables de transitions. Elles ne valent pas validation métier :
 
 - Le format des références `OP-AAAA-NNNN` et `MOD-AAAA-NNNN` est provisoire.
-- Les rôles, ainsi que les valeurs de décision `APPROUVEE` et `REFUSEE`, sont provisoires.
+- Les rôles, ainsi que les valeurs de décision `APPROUVEE` et `REFUSEE`, sont provisoires. Le contrôle BIM est réservé au rôle déclaré `REFERENT_BIM` (libellé provisoire), distinct du chef de projet et du responsable maintenance.
 - Deux champs techniques ont été ajoutés à la modification : `exigences` (contrôle technique requis, catégories de justificatifs exigées) et `dateDecisionImpact`.
 - Correspondances retenues pour le statut affiché : `SOUMIS_A_CONTROLE` et `CONTROLE_BIM` donnent `EN_CONTROLE` ; `AUTORISE` donne `EN_VALIDATION`.
 - Le statut physique d'une opération reste `null` (`mixte: true`) lorsque ses modifications ont des statuts différents.

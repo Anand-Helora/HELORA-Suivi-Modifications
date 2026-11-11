@@ -54,9 +54,9 @@ export const NATURES_VALIDATION = liste("TECHNIQUE", "BIM", "FINALE", "SANS_IMPA
 export const DECISIONS_VALIDATION = liste("APPROUVEE", "REFUSEE");
 
 /**
- * Provisoire : seuls les rôles cités par la spécification. La liste définitive
- * des rôles est un point ouvert (le rôle habilité au contrôle BIM n'est pas
- * nommé : il n'est donc pas contraint). Ces rôles sont déclaratifs (démonstration) :
+ * Provisoire : rôles cités par la spécification, plus un rôle de contrôle BIM
+ * distinct (REFERENT_BIM, libellé provisoire) demandé en revue. La liste
+ * définitive des rôles reste un point ouvert. Ces rôles sont déclaratifs (démonstration) :
  * ils ne constituent en aucun cas une authentification ni un contrôle d'accès.
  */
 export const ROLES = liste(
@@ -64,7 +64,18 @@ export const ROLES = liste(
   "CHEF_PROJET",
   "RESPONSABLE_MAINTENANCE",
   "RESPONSABLE_TECHNIQUE",
+  "REFERENT_BIM",
 );
+
+/**
+ * Rôle déclaré attendu pour les contrôles qui ne dépendent pas de l'origine.
+ * Le contrôle BIM (intégration documentaire) est distinct du contrôle
+ * technique de l'installation, du chef de projet et du responsable maintenance.
+ */
+export const ROLE_PAR_NATURE = Object.freeze({
+  TECHNIQUE: "RESPONSABLE_TECHNIQUE",
+  BIM: "REFERENT_BIM",
+});
 
 /** Rôle requis pour la validation finale / sans impact, selon l'origine (spéc. § 2 et § 3). */
 export const ROLE_RESPONSABLE_PAR_ORIGINE = Object.freeze({

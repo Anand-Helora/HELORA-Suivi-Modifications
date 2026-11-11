@@ -13,7 +13,7 @@
  * SharePoint/API après arbitrage de sécurité et d'architecture.
  */
 
-import { CIBLE_PAR_NATURE, ROLE_RESPONSABLE_PAR_ORIGINE } from "../domaine/constantes.js";
+import { CIBLE_PAR_NATURE, ROLE_PAR_NATURE, ROLE_RESPONSABLE_PAR_ORIGINE } from "../domaine/constantes.js";
 import { CODES_ERREUR, ErreurDomaine } from "../domaine/erreurs.js";
 import {
   exigerAutorisationPossible,
@@ -659,8 +659,8 @@ export function creerAdaptateurMemoire({
           if (validation.decision === "APPROUVEE" && localisationsDeModification(contexte, cible.id).length === 0) {
             problemes.push("une modification validée doit comporter au moins une localisation");
           }
-          if (validation.nature === "TECHNIQUE" && validation.roleAuMoment !== "RESPONSABLE_TECHNIQUE") {
-            problemes.push("le contrôle technique relève du RESPONSABLE_TECHNIQUE");
+          if (validation.nature === "TECHNIQUE" && validation.roleAuMoment !== ROLE_PAR_NATURE.TECHNIQUE) {
+            problemes.push(`le contrôle technique relève du ${ROLE_PAR_NATURE.TECHNIQUE}`);
           }
           if (validation.nature === "SANS_IMPACT") {
             if (cible.impactDocumentaire !== "SANS_IMPACT") problemes.push("la modification n'est pas qualifiée SANS_IMPACT");
@@ -671,6 +671,9 @@ export function creerAdaptateurMemoire({
         } else {
           if (cible.statut !== "CONTROLE_BIM") {
             problemes.push(`une validation ${validation.nature} n'est possible qu'au statut CONTROLE_BIM`);
+          }
+          if (validation.nature === "BIM" && validation.roleAuMoment !== ROLE_PAR_NATURE.BIM) {
+            problemes.push(`le contrôle BIM relève du ${ROLE_PAR_NATURE.BIM}, distinct du chef de projet et du responsable maintenance`);
           }
           if (validation.nature === "FINALE") {
             const roles = new Set(

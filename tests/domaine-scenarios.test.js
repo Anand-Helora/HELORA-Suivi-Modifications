@@ -170,7 +170,7 @@ describe("§ 8.6 — justificatifs manquants", () => {
     });
     const tr = a.creerTraitement({ documentId: "demo-doc-2", indiceCible: "B", modificationIds: [modification.id] }, AUTEURS.rm);
     amenerEnControleBim(a, tr.id);
-    valider(a, tr.id, "BIM", "REFERENT_BIM_DEMO");
+    valider(a, tr.id, "BIM", "REFERENT_BIM");
     valider(a, tr.id, "FINALE", "RESPONSABLE_MAINTENANCE");
     a.avancerTraitement(tr.id, "AUTORISE", AUTEURS.rm);
     assert.throws(() => a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm), GARDE);
@@ -190,11 +190,11 @@ describe("§ 8.6 — justificatifs manquants", () => {
     a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", { ...AUTEURS.rm, exigences: { controleTechnique: true, justificatifs: [] } });
     const tr = a.creerTraitement({ documentId: "demo-doc-2", indiceCible: "B", modificationIds: ["demo-mod-4"] }, AUTEURS.rm);
     amenerEnControleBim(a, tr.id);
-    valider(a, tr.id, "BIM", "REFERENT_BIM_DEMO");
+    valider(a, tr.id, "BIM", "REFERENT_BIM");
     valider(a, tr.id, "FINALE", "RESPONSABLE_MAINTENANCE");
     a.avancerTraitement(tr.id, "AUTORISE", AUTEURS.rm);
     assert.throws(() => a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm), /contrôle technique requis/);
-    assert.throws(() => valider(a, "demo-mod-4", "TECHNIQUE", "REFERENT_BIM_DEMO"), GARDE);
+    assert.throws(() => valider(a, "demo-mod-4", "TECHNIQUE", "REFERENT_BIM"), GARDE);
     valider(a, "demo-mod-4", "TECHNIQUE", "RESPONSABLE_TECHNIQUE");
     assert.equal(a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm).statut, "PUBLIE");
   });
@@ -220,7 +220,7 @@ describe("§ 8.8 — refus du contrôle BIM ou de l'autorisation finale", () => 
     realiser(a, "demo-mod-1");
     realiser(a, "demo-mod-2");
     amenerEnControleBim(a, "demo-tr-1");
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO", "REFUSEE", "Nomenclature fictive incorrecte");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM", "REFUSEE", "Nomenclature fictive incorrecte");
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /contrôle BIM a été refusé/);
 
@@ -235,7 +235,7 @@ describe("§ 8.8 — refus du contrôle BIM ou de l'autorisation finale", () => 
     // Après nouvelle soumission, les décisions antérieures ne comptent plus.
     a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
     a.avancerTraitement("demo-tr-1", "CONTROLE_BIM", AUTEURS.bim);
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /autorisation finale CHANTIER manquante/);
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET", "REFUSEE", "Attendre la réception");
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /autorisation finale CHANTIER refusée/);
@@ -253,7 +253,7 @@ describe("§ 8.8 — refus du contrôle BIM ou de l'autorisation finale", () => 
 
   it("les validations BIM / finales ne sont admises qu'au contrôle BIM", () => {
     const a = adaptateurTest();
-    assert.throws(() => valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO"), GARDE);
+    assert.throws(() => valider(a, "demo-tr-1", "BIM", "REFERENT_BIM"), GARDE);
   });
 });
 
@@ -265,7 +265,7 @@ describe("§ 8.9 — révision commune à une maintenance et à un chantier", ()
     a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", AUTEURS.rm);
     a.associerTraitement("demo-mod-4", "demo-tr-1", AUTEURS.rm);
     amenerEnControleBim(a, "demo-tr-1");
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /autorisation finale MAINTENANCE manquante/);
     assert.throws(() => valider(a, "demo-tr-1", "FINALE", "RESPONSABLE_TECHNIQUE"), GARDE);
@@ -281,7 +281,7 @@ describe("§ 8.9 — révision commune à une maintenance et à un chantier", ()
     const a = adaptateurTest();
     realiser(a, "demo-mod-1");
     amenerEnControleBim(a, "demo-tr-1");
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
     a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
     assert.throws(() => a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp), /MOD-2026-0002 : travaux non réalisés/);
@@ -474,7 +474,7 @@ describe("indicateur de délai (§ 7)", () => {
     realiser(a, "demo-mod-1");
     realiser(a, "demo-mod-2");
     amenerEnControleBim(a, "demo-tr-1");
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
     a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
     a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp);
@@ -506,7 +506,7 @@ describe("retours de revue Codex (PR #7)", () => {
     assert.equal(evenement.apres.indiceCible, "A");
     amenerEnControleBim(a, tr.id);
     assert.throws(() => a.preparerTraitement(tr.id, { indiceCible: "B" }, AUTEURS.rm), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
-    valider(a, tr.id, "BIM", "REFERENT_BIM_DEMO");
+    valider(a, tr.id, "BIM", "REFERENT_BIM");
     valider(a, tr.id, "FINALE", "RESPONSABLE_MAINTENANCE");
     a.avancerTraitement(tr.id, "AUTORISE", AUTEURS.rm);
     assert.equal(a.avancerTraitement(tr.id, "PUBLIE", AUTEURS.rm).statut, "PUBLIE");
@@ -517,13 +517,13 @@ describe("retours de revue Codex (PR #7)", () => {
     realiser(a, "demo-mod-1");
     realiser(a, "demo-mod-2");
     amenerEnControleBim(a, "demo-tr-1");
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
     a.rejeterTraitement("demo-tr-1", { ...AUTEURS.bim, motif: "Reprise" });
     a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
     a.avancerTraitement("demo-tr-1", "CONTROLE_BIM", AUTEURS.bim);
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /contrôle BIM non réalisé/);
-    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM_DEMO");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
     assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), /autorisation finale CHANTIER manquante/);
     // À horodatage égal, c'est l'ordre d'enregistrement qui départage les décisions.
     valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET", "REFUSEE", "Attendre");
@@ -539,5 +539,57 @@ describe("retours de revue Codex (PR #7)", () => {
     a.qualifierImpact("demo-mod-4", "MISE_A_JOUR_REQUISE", AUTEURS.rm);
     a.qualifierImpact("demo-mod-4", "SANS_IMPACT", { ...AUTEURS.rm, justification: "Finalement identique" });
     assert.equal(statutDoc(a, "demo-mod-4"), "SANS_IMPACT_EN_ATTENTE");
+  });
+});
+
+describe("revue complémentaire du propriétaire (PR #7)", () => {
+  it("traitement élargi après autorisation : un seul traitement, aucune publication avec les validations périmées", () => {
+    const a = adaptateurTest({ horloge: () => "2026-11-01T08:00:00Z" });
+    realiser(a, "demo-mod-1");
+    realiser(a, "demo-mod-2");
+    amenerEnControleBim(a, "demo-tr-1");
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
+
+    // Élargissement interdit tant que le traitement est autorisé…
+    a.qualifierImpact("demo-mod-3", "MISE_A_JOUR_REQUISE", AUTEURS.cdp);
+    assert.throws(() => a.associerTraitement("demo-mod-3", "demo-tr-1", AUTEURS.cdp), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+
+    // … et possible seulement via un nouveau cycle (rejet → préparation → nouvelle soumission).
+    a.rejeterTraitement("demo-tr-1", { ...AUTEURS.cdp, motif: "Ajout de MOD-2026-0003" });
+    a.associerTraitement("demo-mod-3", "demo-tr-1", AUTEURS.cdp);
+    realiser(a, "demo-mod-3");
+    a.avancerTraitement("demo-tr-1", "SOUMIS_A_CONTROLE", AUTEURS.bim);
+    a.avancerTraitement("demo-tr-1", "CONTROLE_BIM", AUTEURS.bim);
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp), GARDE);
+    assert.throws(() => a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp), avecCode(CODES_ERREUR.TRANSITION_INTERDITE));
+    const problemes = problemesPublication(a.instantane(), "demo-tr-1");
+    assert.ok(problemes.includes("contrôle BIM non réalisé"));
+    assert.ok(problemes.includes("autorisation finale CHANTIER manquante (CHEF_PROJET)"));
+    assert.equal(statutDoc(a, "demo-mod-3"), "EN_CONTROLE");
+
+    // Une seule révision documentaire couvre désormais les trois modifications.
+    assert.equal(a.lister("traitements").filter((t) => t.documentId === "demo-doc-1").length, 1);
+    assert.equal(a.lister("liensTraitement").filter((l) => l.traitementId === "demo-tr-1").length, 3);
+
+    valider(a, "demo-tr-1", "BIM", "REFERENT_BIM");
+    valider(a, "demo-tr-1", "FINALE", "CHEF_PROJET");
+    a.avancerTraitement("demo-tr-1", "AUTORISE", AUTEURS.cdp);
+    a.avancerTraitement("demo-tr-1", "PUBLIE", AUTEURS.cdp);
+    for (const id of ["demo-mod-1", "demo-mod-2", "demo-mod-3"]) assert.equal(statutDoc(a, id), "A_JOUR");
+    // L'historique conserve les deux cycles.
+    assert.equal(a.lister("validations").filter((v) => v.cibleId === "demo-tr-1").length, 4);
+  });
+
+  it("le contrôle BIM relève d'un rôle déclaré distinct (déclaratif, pas une authentification)", () => {
+    const a = adaptateurTest();
+    amenerEnControleBim(a, "demo-tr-1");
+    for (const role of ["CHEF_PROJET", "RESPONSABLE_MAINTENANCE", "RESPONSABLE_TECHNIQUE"]) {
+      assert.throws(() => valider(a, "demo-tr-1", "BIM", role), /contrôle BIM relève du REFERENT_BIM/);
+    }
+    assert.doesNotThrow(() => valider(a, "demo-tr-1", "BIM", "REFERENT_BIM"));
+    // Le référent BIM ne peut pas non plus donner l'autorisation finale.
+    assert.throws(() => valider(a, "demo-tr-1", "FINALE", "REFERENT_BIM"), GARDE);
   });
 });

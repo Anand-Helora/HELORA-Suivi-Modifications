@@ -16,7 +16,7 @@ export const ACTEURS_DEMO = Object.freeze([
   Object.freeze({ id: "demo-acteur-cdp", nom: "Chef de projet Démo", roles: Object.freeze(["CHEF_PROJET"]) }),
   Object.freeze({ id: "demo-acteur-rm", nom: "Responsable maintenance Démo", roles: Object.freeze(["RESPONSABLE_MAINTENANCE"]) }),
   Object.freeze({ id: "demo-acteur-rt", nom: "Responsable technique Démo", roles: Object.freeze(["RESPONSABLE_TECHNIQUE"]) }),
-  Object.freeze({ id: "demo-acteur-bim", nom: "Référent BIM Démo", roles: Object.freeze([]) }),
+  Object.freeze({ id: "demo-acteur-bim", nom: "Référent BIM Démo", roles: Object.freeze(["REFERENT_BIM"]) }),
 ]);
 
 export function creerFixturesDemo() {

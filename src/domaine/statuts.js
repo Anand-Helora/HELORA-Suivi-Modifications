@@ -14,7 +14,12 @@
  * portent sur des modifications distinctes, jamais sur des lignes d'association.
  */
 
-import { ROLE_RESPONSABLE_PAR_ORIGINE, STATUTS_DOCUMENTAIRES_AFFICHES, STATUTS_PHYSIQUES } from "./constantes.js";
+import {
+  ROLE_PAR_NATURE,
+  ROLE_RESPONSABLE_PAR_ORIGINE,
+  STATUTS_DOCUMENTAIRES_AFFICHES,
+  STATUTS_PHYSIQUES,
+} from "./constantes.js";
 import { CODES_ERREUR, ErreurDomaine } from "./erreurs.js";
 
 const vide = Object.freeze([]);
@@ -238,7 +243,9 @@ export function problemesAutorisation(contexte, traitementId) {
   }
 
   const cycle = { borne: borneSoumission(traitementId), depuis: traitement.dateSoumission };
-  const bim = derniereValidation(contexte, { cibleType: "TRAITEMENT", cibleId: traitementId, nature: "BIM", ...cycle });
+  const bim = derniereValidation(contexte, {
+    cibleType: "TRAITEMENT", cibleId: traitementId, nature: "BIM", roleAuMoment: ROLE_PAR_NATURE.BIM, ...cycle,
+  });
   if (!estApprouvee(bim)) problemes.push(bim ? "le contrôle BIM a été refusé" : "contrôle BIM non réalisé");
 
   const origines = [...new Set(modifications.map((m) => origineDe(contexte, m)))].sort();
@@ -270,7 +277,7 @@ export function problemesPublication(contexte, traitementId) {
     }
     if (m.exigences?.controleTechnique) {
       const technique = derniereValidation(contexte, {
-        cibleType: "MODIFICATION", cibleId: m.id, nature: "TECHNIQUE", roleAuMoment: "RESPONSABLE_TECHNIQUE",
+        cibleType: "MODIFICATION", cibleId: m.id, nature: "TECHNIQUE", roleAuMoment: ROLE_PAR_NATURE.TECHNIQUE,
       });
       if (!estApprouvee(technique)) problemes.push(`${m.reference} : contrôle technique requis non attesté`);
     }
